@@ -39,10 +39,22 @@
   frame.addEventListener('load', () => toPlayer({ event: 'listening' }));
 
   const state = { type: 'state', videoId, title: '', author: '', time: 0, duration: 0, state: -1 };
-  let lastSent = 0;
+  let lastSent = 0, lastSentState = null;
+  // At most one progress update a second, but a change of state (playing, paused, ended...) is always sent at once:
+  // a paused video sends nothing more, so a dropped "paused" would never be corrected.
   const send = (force) => {
     const now = Date.now();
-    if (force || now - lastSent >= 1000) { lastSent = now; toHost({ ...state }); }
+    if (force || state.state !== lastSentState || now - lastSent >= 1000) {
+      lastSent = now; lastSentState = state.state; toHost({ ...state });
+    }
+  };
+
+  // The embed player only reports state changes and errors to pages that subscribe to them.
+  let subscribed = false;
+  const subscribe = () => {
+    if (subscribed) return;
+    subscribed = true;
+    for (const name of ['onStateChange', 'onError']) toPlayer({ event: 'command', func: 'addEventListener', args: [name] });
   };
 
   window.addEventListener('message', (e) => {
@@ -51,6 +63,7 @@
     try { data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch { return; }
     if (!data || typeof data.event !== 'string') return;
     connected = true;
+    subscribe();
 
     if (data.event === 'onError') {
       toHost({ type: 'error', videoId, code: Number(data.info) });
@@ -70,7 +83,30 @@
         if (typeof info.videoData.title === 'string') state.title = info.videoData.title;
         if (typeof info.videoData.author === 'string') state.author = info.videoData.author;
       }
+      if (typeof info.volume === 'number') state.volume = info.volume;
+      if (typeof info.muted === 'boolean') state.muted = info.muted;
     }
+    if (data.event === 'onReady' || data.event === 'initialDelivery') { subscribe(); applyPending(); }
     send(data.event === 'onReady' || data.event === 'initialDelivery');
   });
+
+  // Commands from Tubiqo (the host app only): restore the saved volume, pause when minimized.
+  let pending = [];
+  const command = (func, args = []) => toPlayer({ event: 'command', func, args });
+  const run = (msg) => {
+    if (msg.type === 'setVolume' && typeof msg.volume === 'number') {
+      command('setVolume', [Math.max(0, Math.min(100, Math.round(msg.volume)))]);
+      command(msg.muted === true ? 'mute' : 'unMute');
+    } else if (msg.type === 'pause') {
+      command('pauseVideo');
+    }
+  };
+  const applyPending = () => { const queued = pending; pending = []; queued.forEach(run); };
+  if (window.chrome && chrome.webview) {
+    chrome.webview.addEventListener('message', (e) => {
+      const msg = e.data;
+      if (!msg || typeof msg !== 'object' || typeof msg.type !== 'string') return;
+      if (connected) run(msg); else pending.push(msg);
+    });
+  }
 })();

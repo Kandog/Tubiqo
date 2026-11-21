@@ -21,6 +21,34 @@ public class PlayerMessageTests
     }
 
     [Fact]
+    public void Volume_and_mute_are_reported_when_the_player_knows_them()
+    {
+        var s = Assert.IsType<PlayerStateMessage>(PlayerMessage.Parse("""{"type":"state","videoId":"aqz-KE-bpKQ","volume":42,"muted":true}"""));
+        Assert.Equal(42, s.Volume);
+        Assert.True(s.Muted);
+
+        var unknown = Assert.IsType<PlayerStateMessage>(PlayerMessage.Parse("""{"type":"state","videoId":"aqz-KE-bpKQ"}"""));
+        Assert.Null(unknown.Volume);
+        Assert.Null(unknown.Muted);
+    }
+
+    [Theory]
+    [InlineData("""{"type":"state","videoId":"aqz-KE-bpKQ","volume":250}""", 100)]
+    [InlineData("""{"type":"state","videoId":"aqz-KE-bpKQ","volume":-3}""", 0)]
+    public void Volume_is_kept_within_0_to_100(string json, int expected)
+    {
+        Assert.Equal(expected, Assert.IsType<PlayerStateMessage>(PlayerMessage.Parse(json)).Volume);
+    }
+
+    [Theory]
+    [InlineData("""{"type":"state","videoId":"aqz-KE-bpKQ","volume":"loud"}""")]
+    [InlineData("""{"type":"state","videoId":"aqz-KE-bpKQ","muted":"yes"}""")]
+    public void Wrongly_typed_volume_fields_make_the_message_invalid(string json)
+    {
+        Assert.Null(PlayerMessage.Parse(json));
+    }
+
+    [Fact]
     public void Missing_state_fields_get_safe_defaults()
     {
         var s = Assert.IsType<PlayerStateMessage>(PlayerMessage.Parse("""{"type":"state","videoId":"aqz-KE-bpKQ"}"""));

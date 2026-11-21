@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     readonly WatchTracker tracker;
     readonly PlaybackSettings playbackSettings;
     readonly TrimRuleSettings trimSettings;
+    readonly AppPreferences preferences;
     readonly RulePack builtInRulePack = LoadBuiltInRulePack();
     readonly RulePackStore rulePackStore;
     readonly SignatureVerifier releaseVerifier;
@@ -56,9 +57,13 @@ public partial class MainWindow : Window
         tracker = new WatchTracker(history, TimeProvider.System);
         playbackSettings = new PlaybackSettings(database);
         trimSettings = new TrimRuleSettings(database);
+        preferences = new AppPreferences(database);
         InitializeComponent();
+        RestoreWindowPlacement();
         InitializeHistoryPanel();
         InitializeSettingsPanel();
+        PreviewKeyDown += OnPreviewKeyDown;
+        StateChanged += OnWindowStateChanged;
         Loaded += async (_, _) => await InitializeBrowserAsync();
     }
 
@@ -239,6 +244,7 @@ public partial class MainWindow : Window
     void OnSourceChanged(object? sender, CoreWebView2SourceChangedEventArgs e)
     {
         var source = Core.Source;
+        if (e.IsNewDocument) OnNewPage();
         if (!IsPlayerHost(source))
         {
             Title = "Tubiqo";
@@ -264,6 +270,7 @@ public partial class MainWindow : Window
             case PlayerStateMessage s when s.VideoId == page.VideoId:
                 Title = s.Title.Length > 0 ? $"{s.Title} – Tubiqo" : "Tubiqo";
                 tracker.OnState(s);
+                OnPlayerState(s);
                 break;
             case PlayerErrorMessage err when err.VideoId == page.VideoId && LeanPlayerRoute.NeedsWatchPageFallback(err.Code):
                 // Replace the player's history entry, so Back skips the failed player and returns to the Browse Page.
@@ -352,6 +359,7 @@ public partial class MainWindow : Window
         if (shuttingDown) return;
         shuttingDown = true;
         tracker.Flush();
+        SaveWindowPlacement();
         Hide();
 
         if (environment != null)

@@ -41,7 +41,20 @@ public abstract record PlayerMessage
         var s = (int)stateNumber;
         var state = s == stateNumber && Enum.IsDefined(typeof(PlayerState), s) ? (PlayerState)s : PlayerState.Unstarted;
 
-        return new PlayerStateMessage(videoId, Truncate(title), Truncate(author), Math.Max(0, time), Math.Max(0, duration), state);
+        int? volume = null;
+        if (root.TryGetProperty("volume", out var v))
+        {
+            if (v.ValueKind != JsonValueKind.Number || !v.TryGetDouble(out var vd) || !double.IsFinite(vd)) return null;
+            volume = (int)Math.Clamp(Math.Round(vd), 0, 100);
+        }
+        bool? muted = null;
+        if (root.TryGetProperty("muted", out var m))
+        {
+            if (m.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return null;
+            muted = m.GetBoolean();
+        }
+
+        return new PlayerStateMessage(videoId, Truncate(title), Truncate(author), Math.Max(0, time), Math.Max(0, duration), state, volume, muted);
     }
 
     static string Truncate(string s) => s.Length > MaxTextLength ? s[..MaxTextLength] : s;
@@ -72,7 +85,10 @@ public abstract record PlayerMessage
     }
 }
 
+/// <param name="Volume">Player volume 0–100, when the player reported it.</param>
+/// <param name="Muted">Whether the player is muted, when it reported it.</param>
 public sealed record PlayerStateMessage(
-    string VideoId, string Title, string Author, double TimeSeconds, double DurationSeconds, PlayerState State) : PlayerMessage;
+    string VideoId, string Title, string Author, double TimeSeconds, double DurationSeconds, PlayerState State,
+    int? Volume = null, bool? Muted = null) : PlayerMessage;
 
 public sealed record PlayerErrorMessage(string VideoId, int Code) : PlayerMessage;

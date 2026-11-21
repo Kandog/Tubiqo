@@ -101,6 +101,10 @@
                     </DockPanel>
                     <TextBlock Text="AV1 video is always avoided, so your graphics card can decode the video."
                                Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
+                    <CheckBox x:Name="PauseWhenMinimized" Content="Pause when Tubiqo is minimized" Margin="0,8,0,0"
+                              Checked="PauseWhenMinimized_Changed" Unchecked="PauseWhenMinimized_Changed" />
+                    <TextBlock Text="Shortcuts: Ctrl+L open a link · F11 full screen · Alt+← / Alt+→ back and forward · F5 reload · Ctrl+H Watch History"
+                               Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0" />
 
                     <TextBlock Text="Trim Rules" FontWeight="SemiBold" Margin="0,16,0,4" />
                     <StackPanel x:Name="TrimRuleList" />

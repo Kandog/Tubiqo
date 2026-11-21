@@ -28,6 +28,7 @@ public partial class MainWindow
         foreach (var cap in PlaybackPolicy.ValidCaps.Reverse())
             QualityCap.Items.Add(new ComboBoxItem { Content = cap + "p", Tag = cap });
         QualityCap.SelectedItem = QualityCap.Items.Cast<ComboBoxItem>().First(i => (int)i.Tag == playbackSettings.Policy.QualityCap);
+        PauseWhenMinimized.IsChecked = preferences.PauseWhenMinimized;
         PopulateTrimRules();
         settingsUiReady = true;
     }
@@ -72,6 +73,11 @@ public partial class MainWindow
         trimSettings.SetEnabled(id, box.IsChecked == true);
         await ApplySettingsAsync();
         SettingsChangedNote.Visibility = Visibility.Visible;
+    }
+
+    void PauseWhenMinimized_Changed(object sender, RoutedEventArgs e)
+    {
+        if (settingsUiReady) preferences.PauseWhenMinimized = PauseWhenMinimized.IsChecked == true;
     }
 
     void ReloadForSettings_Click(object sender, RoutedEventArgs e)

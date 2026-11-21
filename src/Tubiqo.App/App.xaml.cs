@@ -40,6 +40,7 @@ public partial class App : Application
         if (Environment.GetEnvironmentVariable("TUBIQO_DEBUG_DATA_ROOT") is { Length: > 0 } testRoot) dataRoot = testRoot;
 #endif
         Directory.CreateDirectory(dataRoot);
+        WatchForCrashes(Path.Combine(dataRoot, "crash.log"));
         var siteData = new SiteDataStore(dataRoot);
         siteData.WipeAll(); // leftovers from a crash or a forced shutdown
         DeleteOldUpdateDownloads();
@@ -58,6 +59,26 @@ public partial class App : Application
     {
         database?.Dispose();
         base.OnExit(e);
+    }
+
+    /// <summary>
+    /// Writes unhandled exceptions to a local crash log in Tubiqo Data (never sent anywhere), since WPF
+    /// otherwise closes without a trace. The log is capped so it can't grow without limit.
+    /// </summary>
+    void WatchForCrashes(string logFile)
+    {
+        void Write(string kind, Exception? ex)
+        {
+            try
+            {
+                if (File.Exists(logFile) && new FileInfo(logFile).Length > 256 * 1024) File.Delete(logFile);
+                File.AppendAllText(logFile, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {kind}: {ex}\n\n");
+            }
+            catch (IOException) { }
+        }
+        DispatcherUnhandledException += (_, e) => Write("UI thread", e.Exception);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => Write("background", e.ExceptionObject as Exception);
+        TaskScheduler.UnobservedTaskException += (_, e) => Write("task", e.Exception);
     }
 
     /// <summary>An in-app update leaves its installer in %TEMP% (it's still running when Tubiqo closes); remove it next time.</summary>

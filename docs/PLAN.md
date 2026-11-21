@@ -99,7 +99,14 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 - Inno Setup installer installs per user, with no admin rights needed.
 - **Done when:** a tampered pack or installer is rejected, a valid one is applied, and rollback works.
 
-### M6: Window behaviour and polish
+### M6: Window behaviour and polish (done 2026-11-21)
+
+> Shortcuts work with focus inside the page too (WebView2 passes them to the app): Ctrl+L opens the link box, F11 and Esc toggle full screen, Alt+← and Alt+→ go back and forward, F5 and Ctrl+R reload, Alt+Home goes home, and Ctrl+H toggles Watch History. The link box (`LinkInput`) accepts YouTube links, links without `https://`, and bare video IDs, refuses everything else with a reason, and pre-fills a YouTube link from the clipboard. Window placement (moved back onscreen if a monitor is gone) and volume and mute are kept in Tubiqo Data and reapplied; the volume goes to the embed player through a host-only message. Minimizing keeps playing unless "Pause when Tubiqo is minimized" is on; when minimized and nothing plays, the page is hidden, set to low memory and suspended.
+>
+> Fixed while testing: the Lean Player page never subscribed to the embed player's `onStateChange` and `onError` events, and its once-a-second limit could drop a "paused" update for good. So pauses weren't seen, and a real "can't embed" error would never have reached the app (M1 only tested the fallback with a simulated error). Both are fixed. A local crash log (`crash.log` in Tubiqo Data, capped at 256 KB) now records unhandled exceptions.
+>
+> Live-checked: all shortcuts, including F11 from inside the page 12 times out of 12; the link box refusing a non-YouTube link and opening `youtu.be/…?t=30`; playback continuing while minimized (12 → 28 s over 15 s); pause-when-minimized; and, minimized and paused, **0.0% CPU with memory falling to 36 MB** (from 226 MB visible). Restoring resumes normally, and placement and volume (30) survive a restart.
+
 - Toolbar: Back, Forward, Reload, Home, Watch History, Settings.
 - Ctrl+L opens "paste a YouTube link", which accepts only Allowed Domains.
 - F11 and the player's fullscreen button both hide the toolbar.
