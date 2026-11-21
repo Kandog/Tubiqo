@@ -3,28 +3,85 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="h2o" Width="1280" Height="800" MinWidth="480" MinHeight="320">
+    <Window.Resources>
+        <Style x:Key="ToolButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="MinWidth" Value="36" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
 
-        <!-- Slim toolbar. Watch History and Settings arrive in M3/M4. -->
-        <StackPanel x:Name="Toolbar" Orientation="Horizontal" Height="36" Margin="4,0" VerticalAlignment="Center">
-            <StackPanel.Resources>
-                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                    <Setter Property="MinWidth" Value="36" />
-                    <Setter Property="Height" Value="30" />
-                    <Setter Property="Padding" Value="8,0" />
-                    <Setter Property="Margin" Value="0,0,4,0" />
-                </Style>
-            </StackPanel.Resources>
-            <Button x:Name="BackButton" Content="◀" ToolTip="Back" Click="Back_Click" IsEnabled="False" />
-            <Button x:Name="ForwardButton" Content="▶" ToolTip="Forward" Click="Forward_Click" IsEnabled="False" />
-            <Button Content="⟳" ToolTip="Reload" Click="Reload_Click" />
-            <Button Content="⌂" ToolTip="Home" Click="Home_Click" />
-        </StackPanel>
+        <!-- Slim toolbar. Settings arrives in M4. -->
+        <DockPanel x:Name="Toolbar" Grid.ColumnSpan="2" Height="36" Margin="4,0" LastChildFill="False">
+            <Button x:Name="BackButton" Style="{StaticResource ToolButton}" Content="◀" ToolTip="Back" Click="Back_Click" IsEnabled="False" VerticalAlignment="Center" />
+            <Button x:Name="ForwardButton" Style="{StaticResource ToolButton}" Content="▶" ToolTip="Forward" Click="Forward_Click" IsEnabled="False" VerticalAlignment="Center" />
+            <Button Style="{StaticResource ToolButton}" Content="⟳" ToolTip="Reload" Click="Reload_Click" VerticalAlignment="Center" />
+            <Button Style="{StaticResource ToolButton}" Content="⌂" ToolTip="Home" Click="Home_Click" VerticalAlignment="Center" />
+            <ToggleButton x:Name="HistoryButton" DockPanel.Dock="Right" Content="🕘" ToolTip="Watch History"
+                          MinWidth="36" Height="30" Padding="8,0" VerticalAlignment="Center"
+                          Checked="HistoryButton_Changed" Unchecked="HistoryButton_Changed" />
+        </DockPanel>
 
         <wv2:WebView2 x:Name="Browser" Grid.Row="1" />
+
+        <!-- Watch History panel. It sits beside the page, not over it: WPF can't draw on top of WebView2. -->
+        <Border x:Name="HistoryPanel" Grid.Row="1" Grid.Column="1" Width="380" Visibility="Collapsed"
+                BorderThickness="1,0,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+            <DockPanel Margin="12,8,12,12">
+                <TextBlock DockPanel.Dock="Top" Text="Watch History" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
+
+                <TextBlock DockPanel.Dock="Top" Text="Search title or channel" Opacity="0.7" Margin="0,0,0,2" />
+                <TextBox x:Name="HistorySearch" DockPanel.Dock="Top" TextChanged="HistorySearch_TextChanged" />
+
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                    <CheckBox x:Name="PauseRecording" Content="Pause recording" Checked="PauseRecording_Changed" Unchecked="PauseRecording_Changed" />
+                    <DockPanel Margin="0,8,0,0">
+                        <TextBlock Text="Keep history" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox x:Name="Retention" SelectionChanged="Retention_SelectionChanged" />
+                    </DockPanel>
+                    <TextBlock Text="Delete what I watched between" Margin="0,12,0,2" />
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Delete" Click="DeleteRange_Click" Margin="8,0,0,0" />
+                        <UniformGrid Columns="2">
+                            <DatePicker x:Name="RangeFrom" Margin="0,0,4,0" />
+                            <DatePicker x:Name="RangeTo" />
+                        </UniformGrid>
+                    </DockPanel>
+                    <Button Content="Clear all Watch History" Click="ClearHistory_Click" Margin="0,12,0,0" HorizontalAlignment="Stretch" />
+                </StackPanel>
+
+                <TextBlock x:Name="HistoryEmpty" DockPanel.Dock="Top" Margin="0,16,0,0" Opacity="0.7" TextWrapping="Wrap" Visibility="Collapsed" />
+
+                <ListBox x:Name="HistoryList" Margin="0,8,0,0" HorizontalContentAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                         KeyDown="HistoryList_KeyDown">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel ToolTip="{Binding Title}" Background="Transparent" MouseLeftButtonUp="HistoryItem_Click">
+                                <Button DockPanel.Dock="Right" Content="✕" ToolTip="Remove from Watch History" Padding="6,2"
+                                        VerticalAlignment="Center" Click="DeleteEntry_Click" Tag="{Binding VideoId}" />
+                                <StackPanel Margin="0,2,8,2">
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Channel}" Opacity="0.8" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Details}" Opacity="0.65" FontSize="12" />
+                                </StackPanel>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
     </Grid>
 </Window>

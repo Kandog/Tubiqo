@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using H2o.Core.History;
 using H2o.Core.Storage;
 using Microsoft.Web.WebView2.Core;
 
@@ -34,11 +35,28 @@ public partial class App : Application
         }
 
         var h2oRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "h2o");
+#if DEBUG
+        // Debug builds only: lets test scripts use a throwaway h2o Data folder instead of the real one.
+        if (Environment.GetEnvironmentVariable("H2O_DEBUG_DATA_ROOT") is { Length: > 0 } testRoot) h2oRoot = testRoot;
+#endif
+        Directory.CreateDirectory(h2oRoot);
         var siteData = new SiteDataStore(h2oRoot);
         siteData.WipeAll(); // leftovers from a crash or a forced shutdown
 
-        MainWindow = new MainWindow(siteData);
+        database = H2oDatabase.Open(Path.Combine(h2oRoot, "h2o.db"));
+        var history = new WatchHistory(database, TimeProvider.System);
+        history.ApplyRetention();
+
+        MainWindow = new MainWindow(siteData, history);
         MainWindow.Show();
+    }
+
+    H2oDatabase? database;
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        database?.Dispose();
+        base.OnExit(e);
     }
 
     static bool RuntimeIsUsable(out string problem)

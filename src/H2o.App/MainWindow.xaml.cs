@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
+using H2o.Core.History;
 using H2o.Core.Navigation;
 using H2o.Core.Playback;
 using H2o.Core.Storage;
@@ -22,6 +23,8 @@ public partial class MainWindow : Window
     };
 
     readonly SiteDataStore siteData;
+    readonly WatchHistory history;
+    readonly WatchTracker tracker;
     CoreWebView2Environment? environment;
     bool shuttingDown, readyToClose;
 
@@ -33,10 +36,13 @@ public partial class MainWindow : Window
     WindowStyle savedStyle;
     ResizeMode savedResize;
 
-    public MainWindow(SiteDataStore siteData)
+    public MainWindow(SiteDataStore siteData, WatchHistory history)
     {
         this.siteData = siteData;
+        this.history = history;
+        tracker = new WatchTracker(history, TimeProvider.System);
         InitializeComponent();
+        InitializeHistoryPanel();
         Loaded += async (_, _) => await InitializeBrowserAsync();
     }
 
@@ -185,7 +191,12 @@ public partial class MainWindow : Window
     void OnSourceChanged(object? sender, CoreWebView2SourceChangedEventArgs e)
     {
         var source = Core.Source;
-        if (!IsPlayerHost(source)) Title = "h2o";
+        if (!IsPlayerHost(source))
+        {
+            Title = "h2o";
+            tracker.Flush(); // left the Lean Player: save where the video got to
+            RefreshHistory();
+        }
 
         // Backstop for in-page navigation to a video the click hook missed: swap this entry for the Lean Player.
         if (!e.IsNewDocument && LeanPlayerRoute.TryGetVideo(source, out var video) && video.VideoId != fallbackVideoId)
@@ -204,6 +215,7 @@ public partial class MainWindow : Window
         {
             case PlayerStateMessage s when s.VideoId == page.VideoId:
                 Title = s.Title.Length > 0 ? $"{s.Title} – h2o" : "h2o";
+                tracker.OnState(s);
                 break;
             case PlayerErrorMessage err when err.VideoId == page.VideoId && LeanPlayerRoute.NeedsWatchPageFallback(err.Code):
                 // Replace the player's history entry, so Back skips the failed player and returns to the Browse Page.
@@ -222,6 +234,7 @@ public partial class MainWindow : Window
         {
             savedState = WindowState; savedStyle = WindowStyle; savedResize = ResizeMode;
             Toolbar.Visibility = Visibility.Collapsed;
+            HistoryButton.IsChecked = false;
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
             WindowState = WindowState.Normal; // re-maximizing without borders covers the taskbar
@@ -290,6 +303,7 @@ public partial class MainWindow : Window
         e.Cancel = true;
         if (shuttingDown) return;
         shuttingDown = true;
+        tracker.Flush();
         Hide();
 
         if (environment != null)

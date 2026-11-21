@@ -58,7 +58,10 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 - Apply the Quality Cap through the player API (`setPlaybackQualityRange`). It is a per-user setting, defaulting to 1080p.
 - **Done when:** the probe shows `vp09` (or `avc1`) at no more than the cap, in both the Lean Player and the Watch Page Fallback. Gate: under 10% CPU at 1080p.
 
-### M3: Watch History
+### M3: Watch History (done 2026-11-21)
+
+> Built as planned: SQLite `h2o.db` (Watch History plus the pause and retention settings), and a side panel beside the page (WPF can't draw over WebView2). The panel shows text only, no thumbnails, so it uses no extra memory or network and doesn't tell YouTube what you've watched. Finishing a video resets its Resume Position, and a video nearly finished (within 10 s of the end) reopens from the start. Live-checked: recording after 10 s, the panel, resuming at the saved time, pause recording (including after a restart), search, and ✕ delete. Delete range, clear all and retention are covered by unit tests only; they go through confirm dialogs. **Known gap:** videos played on the Watch Page Fallback aren't recorded, because only the Lean Player page reports playback to the app.
+
 - SQLite database at `%LOCALAPPDATA%\h2o\h2o.db`, readable only by your user account.
 - Watch Entry rules, written test-first in Core:
   - an entry is created after about 10 s of playback
