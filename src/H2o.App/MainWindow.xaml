@@ -5,12 +5,12 @@
         Title="h2o" Width="1280" Height="800" MinWidth="480" MinHeight="320">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="36" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <!-- Slim toolbar. Watch History and Settings arrive in M3/M4. -->
-        <StackPanel Orientation="Horizontal" Margin="4,2" VerticalAlignment="Center">
+        <StackPanel x:Name="Toolbar" Orientation="Horizontal" Height="36" Margin="4,0" VerticalAlignment="Center">
             <StackPanel.Resources>
                 <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                     <Setter Property="MinWidth" Value="36" />

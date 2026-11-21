@@ -19,4 +19,11 @@
     <AssemblyName>h2o</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Lean Player page, served from the app folder at https://player.h2o.test/ -->
+    <Content Include="Player\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Scripts h2o injects into pages -->
+    <Content Include="Scripts\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

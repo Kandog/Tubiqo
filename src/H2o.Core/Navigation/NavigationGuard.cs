@@ -56,22 +56,11 @@ public static class NavigationGuard
         }
 
         // youtube.com/redirect?q=<target> wraps outside links; judge the real destination.
-        if (depth == 0 && uri.AbsolutePath == "/redirect" && QueryValue(uri, "q") is { } inner)
+        if (depth == 0 && uri.AbsolutePath == "/redirect" && QueryString.Get(uri, "q") is { Length: > 0 } inner)
         {
             return Classify(inner, target, depth + 1);
         }
 
         return new(NavigationAction.Allow, uri.AbsoluteUri);
-    }
-
-    static string? QueryValue(Uri uri, string key)
-    {
-        foreach (var part in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var eq = part.IndexOf('=');
-            if (eq <= 0 || part[..eq] != key) continue;
-            return Uri.UnescapeDataString(part[(eq + 1)..].Replace('+', ' '));
-        }
-        return null;
     }
 }

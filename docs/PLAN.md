@@ -39,7 +39,10 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 - **Navigation guard** (`H2o.Core.Navigation`): anything outside the Allowed Domains is cancelled. h2o shows a confirm dialog with the URL, then opens it in the default browser. Pop-ups go through the same guard.
 - **Done when:** youtube.com loads, external links show the confirm dialog, the profile folder is gone after exit, and the guard's unit tests pass.
 
-### M1: Lean Player
+### M1: Lean Player (done 2026-11-21)
+
+> Measured: about 275 MB steady while playing (passes the 300 MB gate), but the Browse Page's memory (about 530–630 MB) lingers for about 20 s after the switch before Chromium releases it. The player page drives the embed iframe with the raw postMessage protocol instead of loading YouTube's `iframe_api` script, so no YouTube code runs in the origin that can message the app. Fullscreen (from the player's button) was pulled forward from M6. The Watch Page Fallback has been tested only with a simulated error 150; it still needs a real non-embeddable video.
+
 - Classify navigation: `/watch?v=`, `youtu.be/<id>`, `/shorts/<id>`, and Watch History clicks all go to the Lean Player. Everything else on the Allowed Domains is a Browse Page.
 - Serve `player.html` from a virtual host (`player.h2o.test`). It holds only that one file, with a strict Content-Security-Policy that allows only the `youtube-nocookie.com` iframe and nothing else.
 - Use the YouTube IFrame Player API (`enablejsapi=1`) to bridge player state (state, time, duration, title, errors) to C# through `postMessage` and `chrome.webview`.

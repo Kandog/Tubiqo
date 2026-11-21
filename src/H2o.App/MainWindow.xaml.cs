@@ -1,7 +1,10 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using H2o.Core.Navigation;
+using H2o.Core.Playback;
 using H2o.Core.Storage;
 using Microsoft.Web.WebView2.Core;
 
@@ -22,6 +25,14 @@ public partial class MainWindow : Window
     CoreWebView2Environment? environment;
     bool shuttingDown, readyToClose;
 
+    // The video currently shown on a Watch Page Fallback; its watch URL must not be rerouted to the Lean Player.
+    string? fallbackVideoId;
+
+    // Window state saved while the player is fullscreen.
+    WindowState savedState;
+    WindowStyle savedStyle;
+    ResizeMode savedResize;
+
     public MainWindow(SiteDataStore siteData)
     {
         this.siteData = siteData;
@@ -33,14 +44,34 @@ public partial class MainWindow : Window
 
     async Task InitializeBrowserAsync()
     {
-        var options = new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = false };
+        var options = new CoreWebView2EnvironmentOptions
+        {
+            AreBrowserExtensionsEnabled = false,
+            // The Lean Player starts videos on a new page, after the user's click on the previous one.
+            AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required",
+        };
+#if DEBUG
+        // Debug builds only: keep WebView2's own override variable working (used by test scripts to attach DevTools).
+        if (Environment.GetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS") is { Length: > 0 } extra)
+            options.AdditionalBrowserArguments += " " + extra;
+#endif
         environment = await CoreWebView2Environment.CreateAsync(
             browserExecutableFolder: null, userDataFolder: siteData.CreateSessionFolder(), options);
         await Browser.EnsureCoreWebView2Async(environment);
 
         ApplyHardening(Core);
 
+        // Lean Player page: served read-only from the app folder; other origins can't load its files.
+        Core.SetVirtualHostNameToFolderMapping(
+            AllowedDomains.PlayerHost, Path.Combine(AppContext.BaseDirectory, "Player"),
+            CoreWebView2HostResourceAccessKind.Deny);
+        await Core.AddScriptToExecuteOnDocumentCreatedAsync(
+            await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Scripts", "video-links.js")));
+
         Core.NavigationStarting += OnNavigationStarting;
+        Core.SourceChanged += OnSourceChanged;
+        Core.WebMessageReceived += OnWebMessageReceived;
+        Core.ContainsFullScreenElementChanged += (_, _) => SetFullScreen(Core.ContainsFullScreenElement);
         Core.FrameNavigationStarting += OnFrameNavigationStarting;
         Core.NewWindowRequested += OnNewWindowRequested;
         Core.HistoryChanged += (_, _) =>
@@ -64,7 +95,7 @@ public partial class MainWindow : Window
         s.IsPasswordAutosaveEnabled = false;
         s.IsGeneralAutofillEnabled = false;
         s.AreHostObjectsAllowed = false;
-        s.IsWebMessageEnabled = false;              // M1 enables it for the Lean Player page only
+        s.IsWebMessageEnabled = true;               // only messages from the Lean Player page are accepted (OnWebMessageReceived)
         s.IsStatusBarEnabled = false;
         s.IsSwipeNavigationEnabled = false;
         s.IsReputationCheckingRequired = true;      // keep SmartScreen on
@@ -108,9 +139,83 @@ public partial class MainWindow : Window
     void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
     {
         var decision = NavigationGuard.Classify(e.Uri, NavigationTarget.TopLevel);
-        if (decision.Action == NavigationAction.Allow) return;
-        e.Cancel = true;
-        Act(decision);
+        if (decision.Action != NavigationAction.Allow)
+        {
+            e.Cancel = true;
+            Act(decision);
+            return;
+        }
+
+        var url = decision.Url; // a youtube.com/redirect link is judged by its real destination
+        if (LeanPlayerRoute.IsFallback(url, out var fallbackId))
+        {
+            fallbackVideoId = fallbackId;
+            return;
+        }
+        fallbackVideoId = null;
+
+        if (LeanPlayerRoute.TryGetVideo(url, out var video))
+        {
+            e.Cancel = true;
+            Dispatcher.InvokeAsync(() => Core.Navigate(LeanPlayerRoute.PlayerUrl(video)));
+            return;
+        }
+
+        if (IsPlayerHost(url) && !LeanPlayerRoute.TryParsePlayerUrl(url, out _)) e.Cancel = true;
+    }
+
+    void OnSourceChanged(object? sender, CoreWebView2SourceChangedEventArgs e)
+    {
+        var source = Core.Source;
+        if (!IsPlayerHost(source)) Title = "h2o";
+
+        // Backstop for in-page navigation to a video the click hook missed: swap this entry for the Lean Player.
+        if (!e.IsNewDocument && LeanPlayerRoute.TryGetVideo(source, out var video) && video.VideoId != fallbackVideoId)
+        {
+            _ = Core.ExecuteScriptAsync($"location.replace({JsonSerializer.Serialize(LeanPlayerRoute.PlayerUrl(video))})");
+        }
+    }
+
+    void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        // Only h2o's own player page may talk to the app, and only about the video it is showing.
+        if (!LeanPlayerRoute.TryParsePlayerUrl(e.Source, out var page)) return;
+        var message = PlayerMessage.Parse(e.WebMessageAsJson);
+
+        switch (message)
+        {
+            case PlayerStateMessage s when s.VideoId == page.VideoId:
+                Title = s.Title.Length > 0 ? $"{s.Title} – h2o" : "h2o";
+                break;
+            case PlayerErrorMessage err when err.VideoId == page.VideoId && LeanPlayerRoute.NeedsWatchPageFallback(err.Code):
+                // Replace the player's history entry, so Back skips the failed player and returns to the Browse Page.
+                _ = Core.ExecuteScriptAsync($"location.replace({JsonSerializer.Serialize(LeanPlayerRoute.FallbackUrl(page))})");
+                break;
+        }
+    }
+
+    static bool IsPlayerHost(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var u) &&
+        string.Equals(u.IdnHost, AllowedDomains.PlayerHost, StringComparison.OrdinalIgnoreCase);
+
+    void SetFullScreen(bool on)
+    {
+        if (on)
+        {
+            savedState = WindowState; savedStyle = WindowStyle; savedResize = ResizeMode;
+            Toolbar.Visibility = Visibility.Collapsed;
+            WindowStyle = WindowStyle.None;
+            ResizeMode = ResizeMode.NoResize;
+            WindowState = WindowState.Normal; // re-maximizing without borders covers the taskbar
+            WindowState = WindowState.Maximized;
+        }
+        else
+        {
+            Toolbar.Visibility = Visibility.Visible;
+            WindowStyle = savedStyle;
+            ResizeMode = savedResize;
+            WindowState = savedState;
+        }
     }
 
     void OnFrameNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
