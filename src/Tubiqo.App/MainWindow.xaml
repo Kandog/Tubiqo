@@ -106,6 +106,17 @@
                     <StackPanel x:Name="TrimRuleList" />
                     <TextBlock x:Name="RulePackInfo" Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0" />
 
+                    <TextBlock Text="Updates" FontWeight="SemiBold" Margin="0,16,0,4" />
+                    <TextBlock x:Name="VersionInfo" Opacity="0.8" />
+                    <TextBlock Text="Tubiqo only checks when you ask. Everything it downloads must be signed by the Tubiqo maintainer."
+                               Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,6" />
+                    <WrapPanel>
+                        <Button x:Name="CheckUpdatesButton" Content="Check for updates" Click="CheckForUpdates_Click" Margin="0,0,8,6" />
+                        <Button x:Name="RollbackButton" Content="Roll back Rule Pack" Click="RollbackRulePack_Click" Margin="0,0,8,6" />
+                    </WrapPanel>
+                    <Button x:Name="InstallUpdateButton" Visibility="Collapsed" Click="InstallUpdate_Click" HorizontalAlignment="Left" Margin="0,0,0,6" />
+                    <TextBlock x:Name="UpdateStatus" TextWrapping="Wrap" />
+
                     <Border x:Name="SettingsChangedNote" Visibility="Collapsed" Margin="0,16,0,0" Padding="8"
                             BorderThickness="1" CornerRadius="4" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
                         <DockPanel>

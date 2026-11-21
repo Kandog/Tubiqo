@@ -8,6 +8,7 @@ using Tubiqo.Core.Navigation;
 using Tubiqo.Core.Playback;
 using Tubiqo.Core.Rules;
 using Tubiqo.Core.Storage;
+using Tubiqo.Core.Updates;
 using Microsoft.Web.WebView2.Core;
 
 namespace Tubiqo.App;
@@ -28,7 +29,10 @@ public partial class MainWindow : Window
     readonly WatchTracker tracker;
     readonly PlaybackSettings playbackSettings;
     readonly TrimRuleSettings trimSettings;
-    readonly RulePack rulePack = LoadBuiltInRulePack();
+    readonly RulePack builtInRulePack = LoadBuiltInRulePack();
+    readonly RulePackStore rulePackStore;
+    readonly SignatureVerifier releaseVerifier;
+    RulePack rulePack;
     string? policyScriptId, trimScriptId;
     List<string> blockPatterns = [];
     CoreWebView2Environment? environment;
@@ -42,10 +46,13 @@ public partial class MainWindow : Window
     WindowStyle savedStyle;
     ResizeMode savedResize;
 
-    public MainWindow(SiteDataStore siteData, TubiqoDatabase database, WatchHistory history)
+    public MainWindow(SiteDataStore siteData, TubiqoDatabase database, WatchHistory history, string dataRoot)
     {
         this.siteData = siteData;
         this.history = history;
+        releaseVerifier = new SignatureVerifier(ReleaseKey.PublicKey);
+        rulePackStore = new RulePackStore(dataRoot, releaseVerifier);
+        rulePack = CurrentRulePack();
         tracker = new WatchTracker(history, TimeProvider.System);
         playbackSettings = new PlaybackSettings(database);
         trimSettings = new TrimRuleSettings(database);

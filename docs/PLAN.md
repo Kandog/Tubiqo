@@ -84,7 +84,14 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 - Settings page: one toggle per Trim Rule, with its state saved in Tubiqo Data.
 - **Done when:** each toggle visibly changes the Browse Pages and the defaults match the design. Gate: home and search pages stay under 500 MB.
 
-### M5: Updates and installer
+### M5: Updates and installer (done 2026-11-21)
+
+> Built as planned, with one design refinement: each GitHub release carries a single signed manifest, `tubiqo-release.json` plus `.sig`. It lists each file (installer and/or Rule Pack) with its version, size and SHA-256, so one signature covers everything, and an older but validly signed release can never downgrade Tubiqo (only strictly newer versions are offered). Downloaded Rule Packs are re-verified every time they load; one edited on disk is ignored in favour of the built-in pack. The newer of the built-in and downloaded packs is used. The updater only talks https to GitHub's own hosts, checks every redirect hop, and sends a generic User-Agent and no cookies. The maintainer key lives in `%APPDATA%\Tubiqo-signing` (owner-only permissions, never in the repo); `*.pem` is git-ignored as a safety net. The app ships self-contained (no .NET install needed; 45.6 MB installer, 144 MB installed), so .NET security fixes arrive with Tubiqo releases. The SmartScreen "unknown publisher" warning is accepted.
+>
+> Live-checked against a fake GitHub on localhost: no release yet, a release signed by another key (ignored), a tampered Rule Pack (rejected), a valid Rule Pack (applied, survives restart), up to date, rollback, a tampered installer (rejected, download deleted), and a real installer update (Tubiqo closed, installed per-user and relaunched). The silent uninstaller then removed everything. Not yet done: a real GitHub release, which is your call to publish.
+>
+> **Cutting a release:** bump `<Version>` in `src/Tubiqo.App/Tubiqo.App.csproj` (and/or the Rule Pack `version`, like `2026.11.22.1`), then run `.\tools\build-release.ps1 -Sign` (add `-RulePack <file>` to ship a pack) and attach every file in `artifacts\release` to a new GitHub release of Kandog/Tubiqo.
+
 - `tools/sign-rulepack` signs Rule Packs and release installers with the maintainer's ECDSA P-256 private key. The matching public key is compiled into the app.
 - **Check for updates** (manual only) reads the latest GitHub release of [Kandog/Tubiqo](https://github.com/Kandog/Tubiqo):
   - a newer Rule Pack is downloaded, its signature checked, then installed; the previous one is kept for rollback
@@ -113,7 +120,7 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 ## Open questions
 
 1. **Back from the Lean Player:** reloading the Browse Page is lightest, but it loses the scroll position. The alternative is keeping it in a second, suspended WebView, which costs memory. Plan: reload first, then measure the alternative in M1 if it feels bad.
-2. **SmartScreen:** without a paid code-signing certificate, friends will see an "unknown publisher" warning on first install. Accept this for now?
+2. ~~**SmartScreen:** accept the "unknown publisher" warning without a paid code-signing certificate?~~ Accepted 2026-11-21.
 3. **Ads in embeds:** none appeared in testing, but YouTube may show them. Network blocking in the Lean Player needs checking, given the stall seen on the full watch page.
 4. **Live streams** in the Lean Player are untested, and live chat isn't available there.
 5. ~~**GitHub repo:** which account or repo name will releases use?~~ Answered 2026-11-21: [Kandog/Tubiqo](https://github.com/Kandog/Tubiqo); the app was renamed from h2o to Tubiqo to match.

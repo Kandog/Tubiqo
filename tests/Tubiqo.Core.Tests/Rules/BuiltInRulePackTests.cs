@@ -14,6 +14,12 @@ public class BuiltInRulePackTests
     }
 
     [Fact]
+    public void Built_in_pack_version_can_be_compared_with_downloaded_packs()
+    {
+        Assert.True(Version.TryParse(Load().Version, out _));
+    }
+
+    [Fact]
     public void Built_in_pack_has_every_rule_from_the_design_with_its_agreed_default()
     {
         var defaults = Load().Rules.ToDictionary(r => r.Id, r => r.Default);

@@ -3,3 +3,9 @@ obj/
 .vs/
 *.user
 prototype/memtest/results/
+
+# Release signing keys must never be committed
+*.pem
+tubiqo-signing-key*
+# Release build output
+artifacts/

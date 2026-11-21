@@ -42,12 +42,13 @@ public partial class App : Application
         Directory.CreateDirectory(dataRoot);
         var siteData = new SiteDataStore(dataRoot);
         siteData.WipeAll(); // leftovers from a crash or a forced shutdown
+        DeleteOldUpdateDownloads();
 
         database = TubiqoDatabase.Open(Path.Combine(dataRoot, "tubiqo.db"));
         var history = new WatchHistory(database, TimeProvider.System);
         history.ApplyRetention();
 
-        MainWindow = new MainWindow(siteData, database, history);
+        MainWindow = new MainWindow(siteData, database, history, dataRoot);
         MainWindow.Show();
     }
 
@@ -57,6 +58,16 @@ public partial class App : Application
     {
         database?.Dispose();
         base.OnExit(e);
+    }
+
+    /// <summary>An in-app update leaves its installer in %TEMP% (it's still running when Tubiqo closes); remove it next time.</summary>
+    static void DeleteOldUpdateDownloads()
+    {
+        foreach (var dir in Directory.EnumerateDirectories(Path.GetTempPath(), "Tubiqo-update-*"))
+        {
+            try { Directory.Delete(dir, recursive: true); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { } // still in use: try next start
+        }
     }
 
     static bool RuntimeIsUsable(out string problem)

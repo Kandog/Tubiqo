@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Tubiqo.Core.Playback;
 using Tubiqo.Core.Rules;
+using Tubiqo.Core.Updates;
 
 namespace Tubiqo.App;
 
@@ -10,21 +11,32 @@ public partial class MainWindow
 {
     bool settingsUiReady;
 
-    static RulePack LoadBuiltInRulePack()
+    internal static RulePack LoadBuiltInRulePack()
     {
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("tubiqo.default-rulepack.json");
-        if (stream == null) return new RulePack("missing", []);
+        if (stream == null) return new RulePack("0.0", []);
         using var reader = new System.IO.StreamReader(stream);
         try { return RulePack.Parse(reader.ReadToEnd()); }
-        catch (RulePackException) { return new RulePack("invalid", []); } // unit tests keep this from shipping
+        catch (RulePackException) { return new RulePack("0.0", []); } // unit tests keep this from shipping
     }
+
+    /// <summary>The Rule Pack in use: a downloaded one if it's valid and at least as new as the built-in one.</summary>
+    RulePack CurrentRulePack() => RulePackStore.Choose(builtInRulePack, rulePackStore.LoadCurrent());
 
     void InitializeSettingsPanel()
     {
         foreach (var cap in PlaybackPolicy.ValidCaps.Reverse())
             QualityCap.Items.Add(new ComboBoxItem { Content = cap + "p", Tag = cap });
         QualityCap.SelectedItem = QualityCap.Items.Cast<ComboBoxItem>().First(i => (int)i.Tag == playbackSettings.Policy.QualityCap);
+        PopulateTrimRules();
+        settingsUiReady = true;
+    }
 
+    void PopulateTrimRules()
+    {
+        var wasReady = settingsUiReady;
+        settingsUiReady = false;
+        TrimRuleList.Children.Clear();
         foreach (var rule in rulePack.Rules)
         {
             var box = new CheckBox { Content = rule.Title, Tag = rule.Id, IsChecked = trimSettings.IsEnabled(rule), Margin = new Thickness(0, 2, 0, 2) };
@@ -32,8 +44,11 @@ public partial class MainWindow
             box.Unchecked += TrimRule_Changed;
             TrimRuleList.Children.Add(box);
         }
-        RulePackInfo.Text = $"Rule Pack: built-in, version {rulePack.Version}.";
-        settingsUiReady = true;
+        var source = ReferenceEquals(rulePack, builtInRulePack) ? "built-in" : "downloaded";
+        RulePackInfo.Text = $"Rule Pack {rulePack.Version} ({source}).";
+        VersionInfo.Text = $"Tubiqo {AppVersion.ToString(3)}";
+        RollbackButton.IsEnabled = rulePackStore.HasPrevious;
+        settingsUiReady = wasReady;
     }
 
     void SettingsButton_Changed(object sender, RoutedEventArgs e)
