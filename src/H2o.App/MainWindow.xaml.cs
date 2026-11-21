@@ -6,6 +6,7 @@ using System.Windows;
 using H2o.Core.History;
 using H2o.Core.Navigation;
 using H2o.Core.Playback;
+using H2o.Core.Rules;
 using H2o.Core.Storage;
 using Microsoft.Web.WebView2.Core;
 
@@ -25,6 +26,11 @@ public partial class MainWindow : Window
     readonly SiteDataStore siteData;
     readonly WatchHistory history;
     readonly WatchTracker tracker;
+    readonly PlaybackSettings playbackSettings;
+    readonly TrimRuleSettings trimSettings;
+    readonly RulePack rulePack = LoadBuiltInRulePack();
+    string? policyScriptId, trimScriptId;
+    List<string> blockPatterns = [];
     CoreWebView2Environment? environment;
     bool shuttingDown, readyToClose;
 
@@ -36,13 +42,16 @@ public partial class MainWindow : Window
     WindowStyle savedStyle;
     ResizeMode savedResize;
 
-    public MainWindow(SiteDataStore siteData, WatchHistory history)
+    public MainWindow(SiteDataStore siteData, H2oDatabase database, WatchHistory history)
     {
         this.siteData = siteData;
         this.history = history;
         tracker = new WatchTracker(history, TimeProvider.System);
+        playbackSettings = new PlaybackSettings(database);
+        trimSettings = new TrimRuleSettings(database);
         InitializeComponent();
         InitializeHistoryPanel();
+        InitializeSettingsPanel();
         Loaded += async (_, _) => await InitializeBrowserAsync();
     }
 
@@ -72,9 +81,8 @@ public partial class MainWindow : Window
             AllowedDomains.PlayerHost, Path.Combine(AppContext.BaseDirectory, "Player"),
             CoreWebView2HostResourceAccessKind.Deny);
         await Core.AddScriptToExecuteOnDocumentCreatedAsync(await ReadScriptAsync("video-links.js"));
-        // Runs in every frame, including the embed player inside the Lean Player page.
-        await Core.AddScriptToExecuteOnDocumentCreatedAsync(
-            CurrentPlaybackPolicy().BuildScript(await ReadScriptAsync("playback-policy.js")));
+        Core.WebResourceRequested += OnBlockedRequest;
+        await ApplySettingsAsync();
 
         Core.NavigationStarting += OnNavigationStarting;
         Core.SourceChanged += OnSourceChanged;
@@ -94,10 +102,43 @@ public partial class MainWindow : Window
     static Task<string> ReadScriptAsync(string name) =>
         File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Scripts", name));
 
-    static PlaybackPolicy CurrentPlaybackPolicy()
+    /// <summary>
+    /// (Re)applies the Playback Policy and Trim Rules: page scripts take effect on the next page,
+    /// request blocking at once. Called at startup and whenever a setting changes.
+    /// </summary>
+    async Task ApplySettingsAsync()
     {
-        // Settings UI and persistence arrive with M4; until then the defaults apply.
-        var policy = PlaybackPolicy.Default;
+        if (Browser.CoreWebView2 == null) return; // not started yet; startup applies the saved settings
+        if (policyScriptId != null) Core.RemoveScriptToExecuteOnDocumentCreated(policyScriptId);
+        if (trimScriptId != null) Core.RemoveScriptToExecuteOnDocumentCreated(trimScriptId);
+
+        // Runs in every frame, including the embed player inside the Lean Player page.
+        policyScriptId = await Core.AddScriptToExecuteOnDocumentCreatedAsync(
+            CurrentPlaybackPolicy().BuildScript(await ReadScriptAsync("playback-policy.js")));
+
+        var plan = TrimPlan.From(rulePack, trimSettings);
+        trimScriptId = await Core.AddScriptToExecuteOnDocumentCreatedAsync(plan.BuildScript(await ReadScriptAsync("trim-page.js")));
+
+        // One filter per pattern (never "*"), so ordinary requests such as video segments never come through the app.
+        foreach (var p in blockPatterns)
+            Core.RemoveWebResourceRequestedFilter(p, CoreWebView2WebResourceContext.All, CoreWebView2WebResourceRequestSourceKinds.All);
+        blockPatterns = [.. plan.BlockPatterns];
+        foreach (var p in blockPatterns)
+            Core.AddWebResourceRequestedFilter(p, CoreWebView2WebResourceContext.All, CoreWebView2WebResourceRequestSourceKinds.All);
+    }
+
+    void OnBlockedRequest(object? sender, CoreWebView2WebResourceRequestedEventArgs e)
+    {
+        // Only requests matching an enabled Trim Rule's block pattern reach this handler.
+        e.Response = Core.Environment.CreateWebResourceResponse(null, 403, "Blocked by h2o", "");
+        BlockedRequestCount++;
+    }
+
+    public int BlockedRequestCount { get; private set; }
+
+    PlaybackPolicy CurrentPlaybackPolicy()
+    {
+        var policy = playbackSettings.Policy;
 #if DEBUG
         // Debug builds only: lets test scripts try other caps.
         if (int.TryParse(Environment.GetEnvironmentVariable("H2O_DEBUG_QUALITY_CAP"), out var cap) &&

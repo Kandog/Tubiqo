@@ -47,7 +47,7 @@ public partial class App : Application
         var history = new WatchHistory(database, TimeProvider.System);
         history.ApplyRetention();
 
-        MainWindow = new MainWindow(siteData, history);
+        MainWindow = new MainWindow(siteData, database, history);
         MainWindow.Show();
     }
 

@@ -72,7 +72,12 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 - Side panel: search by title or channel, delete one, delete by date range, clear all, the pause-recording toggle.
 - **Done when:** watching for 10 s or more creates one entry, reopening it resumes, and everything in the panel works.
 
-### M4: Trim Rules and Rule Pack
+### M4: Trim Rules and Rule Pack (done 2026-11-21)
+
+> The built-in Rule Pack (`src/H2o.App/Rules/default-rulepack.json`) is compiled into the app and checked by the same validator as downloaded packs (unit test). The validator refuses anything beyond plain selectors and specific URL patterns, including patterns that would cover video segments, thumbnails, the player or YouTube as a whole. Hide selectors go in a constructed stylesheet, one CSS rule per selector, so the page's CSP can't refuse it and one bad selector can't disable the rest. The Settings panel holds the Quality Cap and one toggle per rule. Page changes apply from the next page, with a "Reload page" button; blocking changes apply at once.
+>
+> Live-checked: ad slots and Shorts actually hidden on search and watch pages, `/pagead` 403 while normal requests pass, hover previews blocked, comments hidden behind a working "Show comments" button, autoplay-next off, and playback steady in both the Lean Player and the Watch Page Fallback (no stalls). Toggles and the cap persist across restarts. Memory: home about 380 MB; search page settles at about 400–470 MB (average 447–484 MB over 45 s, passing the 500 MB gate) but peaks at 530–590 MB for the first seconds after loading. A V8 `--optimize-for-size` flag made no difference and was not adopted.
+
 - Rule Pack format: versioned JSON with `{ id, title, default, hide: [css selectors], block: [url patterns] }`, data only. A default pack is embedded in the app.
 - Apply `hide` as one injected `<style>` on Browse Pages and the Watch Page Fallback. Apply `block` through WebView2 request filters registered **per pattern**, never `*`, so video segments never make a round trip through the app.
 - Rules that need script (no hover previews, autoplay-next off, limited home feed) live in app code.

@@ -22,4 +22,9 @@
     <ProjectReference Include="..\..\src\H2o.Core\H2o.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The app's built-in Rule Pack, checked by BuiltInRulePackTests. -->
+    <None Include="..\..\src\H2o.App\Rules\default-rulepack.json" Link="default-rulepack.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

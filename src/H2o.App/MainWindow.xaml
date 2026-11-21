@@ -28,8 +28,11 @@
             <Button x:Name="ForwardButton" Style="{StaticResource ToolButton}" Content="▶" ToolTip="Forward" Click="Forward_Click" IsEnabled="False" VerticalAlignment="Center" />
             <Button Style="{StaticResource ToolButton}" Content="⟳" ToolTip="Reload" Click="Reload_Click" VerticalAlignment="Center" />
             <Button Style="{StaticResource ToolButton}" Content="⌂" ToolTip="Home" Click="Home_Click" VerticalAlignment="Center" />
-            <ToggleButton x:Name="HistoryButton" DockPanel.Dock="Right" Content="🕘" ToolTip="Watch History"
+            <ToggleButton x:Name="SettingsButton" DockPanel.Dock="Right" Content="⚙" ToolTip="Settings"
                           MinWidth="36" Height="30" Padding="8,0" VerticalAlignment="Center"
+                          Checked="SettingsButton_Changed" Unchecked="SettingsButton_Changed" />
+            <ToggleButton x:Name="HistoryButton" DockPanel.Dock="Right" Content="🕘" ToolTip="Watch History"
+                          MinWidth="36" Height="30" Padding="8,0" Margin="0,0,4,0" VerticalAlignment="Center"
                           Checked="HistoryButton_Changed" Unchecked="HistoryButton_Changed" />
         </DockPanel>
 
@@ -82,6 +85,36 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </DockPanel>
+        </Border>
+
+        <!-- Settings panel: same place as Watch History; only one is open at a time. -->
+        <Border x:Name="SettingsPanel" Grid.Row="1" Grid.Column="1" Width="380" Visibility="Collapsed"
+                BorderThickness="1,0,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="12,8,12,12">
+                    <TextBlock Text="Settings" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+                    <TextBlock Text="Playback" FontWeight="SemiBold" Margin="0,0,0,4" />
+                    <DockPanel>
+                        <TextBlock Text="Highest quality" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox x:Name="QualityCap" SelectionChanged="QualityCap_SelectionChanged" />
+                    </DockPanel>
+                    <TextBlock Text="AV1 video is always avoided, so your graphics card can decode the video."
+                               Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                    <TextBlock Text="Trim Rules" FontWeight="SemiBold" Margin="0,16,0,4" />
+                    <StackPanel x:Name="TrimRuleList" />
+                    <TextBlock x:Name="RulePackInfo" Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0" />
+
+                    <Border x:Name="SettingsChangedNote" Visibility="Collapsed" Margin="0,16,0,0" Padding="8"
+                            BorderThickness="1" CornerRadius="4" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Reload page" Click="ReloadForSettings_Click" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Changes apply to pages you open from now on." TextWrapping="Wrap" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
 </Window>

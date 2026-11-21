@@ -64,6 +64,7 @@ public partial class MainWindow
     void HistoryButton_Changed(object sender, RoutedEventArgs e)
     {
         var show = HistoryButton.IsChecked == true;
+        if (show) SettingsButton.IsChecked = false;
         HistoryPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (show)
         {

@@ -26,4 +26,9 @@
     <Content Include="Scripts\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Built-in Rule Pack, compiled into the app so it can't be edited on disk. -->
+    <EmbeddedResource Include="Rules\default-rulepack.json" LogicalName="h2o.default-rulepack.json" />
+  </ItemGroup>
+
 </Project>
