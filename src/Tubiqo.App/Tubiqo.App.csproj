@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tubiqo.Core\Tubiqo.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4370.26" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- ThemeMode (Fluent, follows Windows light/dark) is still marked experimental in WPF. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <AssemblyName>Tubiqo</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lean Player page, served from the app folder at https://player.tubiqo.test/ -->
+    <Content Include="Player\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Scripts Tubiqo injects into pages -->
+    <Content Include="Scripts\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Built-in Rule Pack, compiled into the app so it can't be edited on disk. -->
+    <EmbeddedResource Include="Rules\default-rulepack.json" LogicalName="tubiqo.default-rulepack.json" />
+  </ItemGroup>
+
+</Project>

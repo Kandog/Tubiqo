@@ -1,6 +1,6 @@
 # WebView2 Evergreen, Windows only
 
-h2o is built in C# (.NET 10, WPF) on Microsoft's WebView2 runtime in Evergreen mode, and runs on Windows only. Security was the deciding factor: Microsoft patches Evergreen WebView2 automatically alongside Edge, so h2o never falls behind on Chromium security fixes. Bundling our own engine would make every Chrome CVE our release emergency. As a bonus, the app stays a few MB because the engine binaries are shared with Windows.
+Tubiqo is built in C# (.NET 10, WPF) on Microsoft's WebView2 runtime in Evergreen mode, and runs on Windows only. Security was the deciding factor: Microsoft patches Evergreen WebView2 automatically alongside Edge, so Tubiqo never falls behind on Chromium security fixes. Bundling our own engine would make every Chrome CVE our release emergency. As a bonus, the app stays a few MB because the engine binaries are shared with Windows.
 
 ## Considered Options
 
@@ -12,5 +12,5 @@ h2o is built in C# (.NET 10, WPF) on Microsoft's WebView2 runtime in Evergreen m
 ## Consequences
 
 - No macOS or Linux version without changing engines.
-- h2o refuses to start if the WebView2 runtime is missing or older than the minimum supported version.
+- Tubiqo refuses to start if the WebView2 runtime is missing or older than the minimum supported version.
 - Some Chromium tuning flags are unavailable; resource savings must come from Trim Rules and the Playback Policy instead.

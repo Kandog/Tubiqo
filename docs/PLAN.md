@@ -1,4 +1,4 @@
-# h2o implementation plan
+# Tubiqo implementation plan
 
 Builds the design in [CONTEXT.md](../CONTEXT.md) and [ADRs 0001–0004](adr/). Each milestone is a vertical slice that ends in something you can run, and the performance targets are re-measured as we go, not only at the end.
 
@@ -7,17 +7,17 @@ Builds the design in [CONTEXT.md](../CONTEXT.md) and [ADRs 0001–0004](adr/). E
 ## Solution layout
 
 ```
-h2o.sln
-src/H2o.Core/          # no WPF, no WebView2: domain rules, fully unit-tested
+Tubiqo.sln
+src/Tubiqo.Core/          # no WPF, no WebView2: domain rules, fully unit-tested
   Navigation/          # URL classification: Allowed Domains, video IDs, Lean Player vs Watch Page Fallback
   History/             # Watch History, Watch Entry rules, Resume Position, auto-delete
   Playback/            # Playback Policy, Quality Cap
   Rules/               # Trim Rules, Rule Pack format and signature verification
-  Storage/             # SQLite for h2o Data
-src/H2o.App/           # WPF (.NET 10, Fluent theme), WebView2 host, injected scripts, UI
+  Storage/             # SQLite for Tubiqo Data
+src/Tubiqo.App/           # WPF (.NET 10, Fluent theme), WebView2 host, injected scripts, UI
   Player/player.html   # the Lean Player's local page, embedded as a resource
   Scripts/             # av1.js, probe/bridge.js, trim-*.js
-tests/H2o.Core.Tests/  # xUnit, written test-first
+tests/Tubiqo.Core.Tests/  # xUnit, written test-first
 tools/measure.ps1      # promoted from the prototype: CPU/memory gate
 tools/sign-rulepack/   # maintainer CLI: signs Rule Packs and releases
 installer/             # Inno Setup script
@@ -30,13 +30,13 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 ### M0: Locked-down shell (done 2026-11-21)
 - WPF window with the Fluent theme (follows Windows light/dark), slim toolbar placeholder.
 - Startup check: WebView2 Evergreen present and at least the minimum version; otherwise show a dialog linking to Microsoft's installer and exit.
-- **Site Data:** a new profile folder under `%LOCALAPPDATA%\h2o\site\` each launch. Wipe it on exit, and also on startup (to clean up after a crash).
+- **Site Data:** a new profile folder under `%LOCALAPPDATA%\Tubiqo\site\` each launch. Wipe it on exit, and also on startup (to clean up after a crash).
 - Hardening from the design:
   - deny every permission request without prompting
   - cancel all downloads
   - turn off autofill, password saving, DevTools (in Release builds), the browser accelerator keys and the default context menu
   - block plain HTTP
-- **Navigation guard** (`H2o.Core.Navigation`): anything outside the Allowed Domains is cancelled. h2o shows a confirm dialog with the URL, then opens it in the default browser. Pop-ups go through the same guard.
+- **Navigation guard** (`Tubiqo.Core.Navigation`): anything outside the Allowed Domains is cancelled. Tubiqo shows a confirm dialog with the URL, then opens it in the default browser. Pop-ups go through the same guard.
 - **Done when:** youtube.com loads, external links show the confirm dialog, the profile folder is gone after exit, and the guard's unit tests pass.
 
 ### M1: Lean Player (done 2026-11-21)
@@ -44,7 +44,7 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 > Measured: about 275 MB steady while playing (passes the 300 MB gate), but the Browse Page's memory (about 530–630 MB) lingers for about 20 s after the switch before Chromium releases it. The player page drives the embed iframe with the raw postMessage protocol instead of loading YouTube's `iframe_api` script, so no YouTube code runs in the origin that can message the app. Fullscreen (from the player's button) was pulled forward from M6. The Watch Page Fallback has been tested only with a simulated error 150; it still needs a real non-embeddable video.
 
 - Classify navigation: `/watch?v=`, `youtu.be/<id>`, `/shorts/<id>`, and Watch History clicks all go to the Lean Player. Everything else on the Allowed Domains is a Browse Page.
-- Serve `player.html` from a virtual host (`player.h2o.test`). It holds only that one file, with a strict Content-Security-Policy that allows only the `youtube-nocookie.com` iframe and nothing else.
+- Serve `player.html` from a virtual host (`player.tubiqo.test`). It holds only that one file, with a strict Content-Security-Policy that allows only the `youtube-nocookie.com` iframe and nothing else.
 - Use the YouTube IFrame Player API (`enablejsapi=1`) to bridge player state (state, time, duration, title, errors) to C# through `postMessage` and `chrome.webview`.
 - **Watch Page Fallback:** when the embed reports error 101, 150 or 153, load the normal watch page instead.
 - **Back** from the Lean Player reloads the Browse Page you came from (see open question 1).
@@ -60,9 +60,9 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 
 ### M3: Watch History (done 2026-11-21)
 
-> Built as planned: SQLite `h2o.db` (Watch History plus the pause and retention settings), and a side panel beside the page (WPF can't draw over WebView2). The panel shows text only, no thumbnails, so it uses no extra memory or network and doesn't tell YouTube what you've watched. Finishing a video resets its Resume Position, and a video nearly finished (within 10 s of the end) reopens from the start. Live-checked: recording after 10 s, the panel, resuming at the saved time, pause recording (including after a restart), search, and ✕ delete. Delete range, clear all and retention are covered by unit tests only; they go through confirm dialogs. **Known gap:** videos played on the Watch Page Fallback aren't recorded, because only the Lean Player page reports playback to the app.
+> Built as planned: SQLite `tubiqo.db` (Watch History plus the pause and retention settings), and a side panel beside the page (WPF can't draw over WebView2). The panel shows text only, no thumbnails, so it uses no extra memory or network and doesn't tell YouTube what you've watched. Finishing a video resets its Resume Position, and a video nearly finished (within 10 s of the end) reopens from the start. Live-checked: recording after 10 s, the panel, resuming at the saved time, pause recording (including after a restart), search, and ✕ delete. Delete range, clear all and retention are covered by unit tests only; they go through confirm dialogs. **Known gap:** videos played on the Watch Page Fallback aren't recorded, because only the Lean Player page reports playback to the app.
 
-- SQLite database at `%LOCALAPPDATA%\h2o\h2o.db`, readable only by your user account.
+- SQLite database at `%LOCALAPPDATA%\Tubiqo\tubiqo.db`, readable only by your user account.
 - Watch Entry rules, written test-first in Core:
   - an entry is created after about 10 s of playback
   - there is one entry per video, and re-watching updates it
@@ -74,19 +74,19 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 
 ### M4: Trim Rules and Rule Pack (done 2026-11-21)
 
-> The built-in Rule Pack (`src/H2o.App/Rules/default-rulepack.json`) is compiled into the app and checked by the same validator as downloaded packs (unit test). The validator refuses anything beyond plain selectors and specific URL patterns, including patterns that would cover video segments, thumbnails, the player or YouTube as a whole. Hide selectors go in a constructed stylesheet, one CSS rule per selector, so the page's CSP can't refuse it and one bad selector can't disable the rest. The Settings panel holds the Quality Cap and one toggle per rule. Page changes apply from the next page, with a "Reload page" button; blocking changes apply at once.
+> The built-in Rule Pack (`src/Tubiqo.App/Rules/default-rulepack.json`) is compiled into the app and checked by the same validator as downloaded packs (unit test). The validator refuses anything beyond plain selectors and specific URL patterns, including patterns that would cover video segments, thumbnails, the player or YouTube as a whole. Hide selectors go in a constructed stylesheet, one CSS rule per selector, so the page's CSP can't refuse it and one bad selector can't disable the rest. The Settings panel holds the Quality Cap and one toggle per rule. Page changes apply from the next page, with a "Reload page" button; blocking changes apply at once.
 >
 > Live-checked: ad slots and Shorts actually hidden on search and watch pages, `/pagead` 403 while normal requests pass, hover previews blocked, comments hidden behind a working "Show comments" button, autoplay-next off, and playback steady in both the Lean Player and the Watch Page Fallback (no stalls). Toggles and the cap persist across restarts. Memory: home about 380 MB; search page settles at about 400–470 MB (average 447–484 MB over 45 s, passing the 500 MB gate) but peaks at 530–590 MB for the first seconds after loading. A V8 `--optimize-for-size` flag made no difference and was not adopted.
 
 - Rule Pack format: versioned JSON with `{ id, title, default, hide: [css selectors], block: [url patterns] }`, data only. A default pack is embedded in the app.
 - Apply `hide` as one injected `<style>` on Browse Pages and the Watch Page Fallback. Apply `block` through WebView2 request filters registered **per pattern**, never `*`, so video segments never make a round trip through the app.
 - Rules that need script (no hover previews, autoplay-next off, limited home feed) live in app code.
-- Settings page: one toggle per Trim Rule, with its state saved in h2o Data.
+- Settings page: one toggle per Trim Rule, with its state saved in Tubiqo Data.
 - **Done when:** each toggle visibly changes the Browse Pages and the defaults match the design. Gate: home and search pages stay under 500 MB.
 
 ### M5: Updates and installer
 - `tools/sign-rulepack` signs Rule Packs and release installers with the maintainer's ECDSA P-256 private key. The matching public key is compiled into the app.
-- **Check for updates** (manual only) reads the latest GitHub release of the h2o repo:
+- **Check for updates** (manual only) reads the latest GitHub release of [Kandog/Tubiqo](https://github.com/Kandog/Tubiqo):
   - a newer Rule Pack is downloaded, its signature checked, then installed; the previous one is kept for rollback
   - a newer app version means downloading the installer and its signature, checking it, then running the installer
 - Inno Setup installer installs per user, with no admin rights needed.
@@ -96,7 +96,7 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 - Toolbar: Back, Forward, Reload, Home, Watch History, Settings.
 - Ctrl+L opens "paste a YouTube link", which accepts only Allowed Domains.
 - F11 and the player's fullscreen button both hide the toolbar.
-- Remember window placement and volume in h2o Data.
+- Remember window placement and volume in Tubiqo Data.
 - Keep playing when minimized, with an optional "pause when minimized" setting. When minimized and not playing, call `TrySuspendAsync` and `MemoryUsageTargetLevel = Low`.
 - **Done when:** the targets table passes, including minimized and not playing.
 
@@ -107,7 +107,7 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 
 ## Testing approach
 
-- `H2o.Core` is built test-first (red, green, refactor). It covers URL classification, Allowed Domains, Watch Entry rules, auto-delete, Quality Cap mapping, Rule Pack parsing and signature verification.
+- `Tubiqo.Core` is built test-first (red, green, refactor). It covers URL classification, Allowed Domains, Watch Entry rules, auto-delete, Quality Cap mapping, Rule Pack parsing and signature verification.
 - App and WebView2 behaviour is checked with manual run scripts plus the `measure.ps1` gates at each milestone.
 
 ## Open questions
@@ -116,7 +116,7 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 2. **SmartScreen:** without a paid code-signing certificate, friends will see an "unknown publisher" warning on first install. Accept this for now?
 3. **Ads in embeds:** none appeared in testing, but YouTube may show them. Network blocking in the Lean Player needs checking, given the stall seen on the full watch page.
 4. **Live streams** in the Lean Player are untested, and live chat isn't available there.
-5. **GitHub repo:** updates assume a GitHub repo for releases. Which account or repo name will it use?
+5. ~~**GitHub repo:** which account or repo name will releases use?~~ Answered 2026-11-21: [Kandog/Tubiqo](https://github.com/Kandog/Tubiqo); the app was renamed from h2o to Tubiqo to match.
 
 ## Risks
 

@@ -1,4 +1,4 @@
-# h2o
+# Tubiqo
 
 A lightweight, security-focused desktop browser whose main job is watching YouTube videos with as little CPU and memory as possible.
 
@@ -9,11 +9,11 @@ The browser never signs in to a Google account and never sends user actions back
 _Avoid_: Read-only, guest mode
 
 **Allowed Domains**:
-The fixed set of YouTube-owned domains h2o is willing to load, plus h2o's own local page that hosts the Lean Player. Any other link is handed to the user's default browser instead of opening in h2o.
+The fixed set of YouTube-owned domains Tubiqo is willing to load, plus Tubiqo's own local page that hosts the Lean Player. Any other link is handed to the user's default browser instead of opening in Tubiqo.
 _Avoid_: Whitelist, permitted sites
 
 **Single Player**:
-h2o's one-window, one-video model: there are no tabs, and opening a new video replaces the current one.
+Tubiqo's one-window, one-video model: there are no tabs, and opening a new video replaces the current one.
 _Avoid_: Tab, session
 
 **Browse Pages**:
@@ -21,7 +21,7 @@ YouTube's own pages where the user finds videos: home, search, channels and play
 _Avoid_: Feed, YouTube site
 
 **Lean Player**:
-How h2o plays a video by default: YouTube's embeddable player shown on its own, without the watch page around it (no description, comments or recommendations). Opening a video from the Browse Pages or Watch History takes the user to the Lean Player, and the Browse Pages are unloaded while it plays.
+How Tubiqo plays a video by default: YouTube's embeddable player shown on its own, without the watch page around it (no description, comments or recommendations). Opening a video from the Browse Pages or Watch History takes the user to the Lean Player, and the Browse Pages are unloaded while it plays.
 _Avoid_: Embed, mini player, watch page
 
 **Watch Page Fallback**:
@@ -33,23 +33,23 @@ A single, user-toggleable rule that hides or blocks one heavy part of YouTube (a
 _Avoid_: Filter, ad-block rule, tweak
 
 **Rule Pack**:
-The signed, data-only bundle that carries the definitions of the Trim Rules (what to hide and what to block, never code). It is updated separately from the app, only when the user asks h2o to check for updates, and only accepted if its signature is valid.
+The signed, data-only bundle that carries the definitions of the Trim Rules (what to hide and what to block, never code). It is updated separately from the app, only when the user asks Tubiqo to check for updates, and only accepted if its signature is valid.
 _Avoid_: Filter list, rules file, config
 
 **Playback Policy**:
-The user's rules for which video formats h2o accepts from YouTube: which codecs are allowed (AV1 is excluded so the GPU can decode) and the **Quality Cap**, the highest resolution h2o will play (default 1080p).
+The user's rules for which video formats Tubiqo accepts from YouTube: which codecs are allowed (AV1 is excluded so the GPU can decode) and the **Quality Cap**, the highest resolution Tubiqo will play (default 1080p).
 _Avoid_: Video settings, quality preset
 
 **Site Data**:
-Everything YouTube itself stores inside h2o (cookies, visitor ID, local storage, cache). It is wiped every time h2o closes.
+Everything YouTube itself stores inside Tubiqo (cookies, visitor ID, local storage, cache). It is wiped every time Tubiqo closes.
 _Avoid_: Browser data, cache
 
-**h2o Data**:
-Everything h2o owns and keeps across launches: Watch History, Trim Rule states, Playback Policy and h2o's own preferences such as volume. It is never shared with YouTube.
+**Tubiqo Data**:
+Everything Tubiqo owns and keeps across launches: Watch History, Trim Rule states, Playback Policy and Tubiqo's own preferences such as volume. It is never shared with YouTube.
 _Avoid_: Profile, user data
 
 **Watch History**:
-The record, kept only on the user's own machine, of the videos the user has watched in h2o. It holds one **Watch Entry** per video. YouTube's account-side history is not part of it.
+The record, kept only on the user's own machine, of the videos the user has watched in Tubiqo. It holds one **Watch Entry** per video. YouTube's account-side history is not part of it.
 _Avoid_: YouTube history, browsing history
 
 **Watch Entry**:

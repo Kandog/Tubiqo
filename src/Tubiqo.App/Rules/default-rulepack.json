@@ -1,0 +1,103 @@
+{
+  "format": 1,
+  "version": "2026.11.21-builtin",
+  "rules": [
+    {
+      "id": "ads",
+      "title": "Block ads and trackers",
+      "default": true,
+      "hide": [
+        "ytd-ad-slot-renderer",
+        "ytd-in-feed-ad-layout-renderer",
+        "ytd-rich-item-renderer:has(ytd-ad-slot-renderer)",
+        "ytd-banner-promo-renderer",
+        "ytd-statement-banner-renderer",
+        "ytd-promoted-sparkles-web-renderer",
+        "ytd-display-ad-renderer",
+        "ytd-companion-slot-renderer",
+        "ytd-merch-shelf-renderer",
+        "#masthead-ad",
+        "#player-ads",
+        "ytd-engagement-panel-section-list-renderer[target-id='engagement-panel-ads']",
+        "ytd-enforcement-message-view-model",
+        "tp-yt-paper-dialog:has(ytd-enforcement-message-view-model)"
+      ],
+      "block": [
+        "*doubleclick.net/*",
+        "*googlesyndication.com/*",
+        "*googleadservices.com/*",
+        "*google-analytics.com/*",
+        "*youtube.com/pagead/*",
+        "*youtube.com/api/stats/ads*",
+        "*youtube.com/ptracking*"
+      ]
+    },
+    {
+      "id": "hover-previews",
+      "title": "No video previews when hovering over thumbnails",
+      "default": true,
+      "hide": [
+        "ytd-video-preview",
+        "#video-preview",
+        "#inline-preview-player"
+      ]
+    },
+    {
+      "id": "shorts",
+      "title": "Hide Shorts",
+      "default": true,
+      "hide": [
+        "ytd-reel-shelf-renderer",
+        "ytd-rich-shelf-renderer[is-shorts]",
+        "ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts])",
+        "grid-shelf-view-model:has(ytm-shorts-lockup-view-model)",
+        "ytm-shorts-lockup-view-model",
+        "ytd-video-renderer:has(a[href^='/shorts/'])",
+        "ytd-guide-entry-renderer:has(a[title='Shorts'])",
+        "ytd-mini-guide-entry-renderer[aria-label='Shorts']"
+      ]
+    },
+    {
+      "id": "comments",
+      "title": "Hide comments (with a \"Show comments\" button)",
+      "default": true,
+      "hide": [
+        "html:not(.tubiqo-show-comments) ytd-comments#comments"
+      ]
+    },
+    {
+      "id": "live-chat",
+      "title": "Hide live chat",
+      "default": true,
+      "hide": [
+        "#chat-container",
+        "ytd-live-chat-frame"
+      ],
+      "block": [
+        "*youtube.com/live_chat*"
+      ]
+    },
+    {
+      "id": "related",
+      "title": "Hide recommended videos beside the watch page",
+      "default": false,
+      "hide": [
+        "#related",
+        "ytd-watch-next-secondary-results-renderer"
+      ]
+    },
+    {
+      "id": "autoplay-next",
+      "title": "Don't autoplay the next video",
+      "default": true
+    },
+    {
+      "id": "home-feed",
+      "title": "Stop the home feed loading more as you scroll",
+      "default": true,
+      "hide": [
+        "ytd-browse[page-subtype='home'] ytd-continuation-item-renderer"
+      ]
+    }
+  ]
+}
