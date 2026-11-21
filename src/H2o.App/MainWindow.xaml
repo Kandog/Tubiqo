@@ -1,0 +1,30 @@
+﻿<Window x:Class="H2o.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="h2o" Width="1280" Height="800" MinWidth="480" MinHeight="320">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Slim toolbar. Watch History and Settings arrive in M3/M4. -->
+        <StackPanel Orientation="Horizontal" Margin="4,2" VerticalAlignment="Center">
+            <StackPanel.Resources>
+                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                    <Setter Property="MinWidth" Value="36" />
+                    <Setter Property="Height" Value="30" />
+                    <Setter Property="Padding" Value="8,0" />
+                    <Setter Property="Margin" Value="0,0,4,0" />
+                </Style>
+            </StackPanel.Resources>
+            <Button x:Name="BackButton" Content="◀" ToolTip="Back" Click="Back_Click" IsEnabled="False" />
+            <Button x:Name="ForwardButton" Content="▶" ToolTip="Forward" Click="Forward_Click" IsEnabled="False" />
+            <Button Content="⟳" ToolTip="Reload" Click="Reload_Click" />
+            <Button Content="⌂" ToolTip="Home" Click="Home_Click" />
+        </StackPanel>
+
+        <wv2:WebView2 x:Name="Browser" Grid.Row="1" />
+    </Grid>
+</Window>
