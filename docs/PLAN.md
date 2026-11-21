@@ -50,7 +50,10 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 - **Back** from the Lean Player reloads the Browse Page you came from (see open question 1).
 - **Done when:** clicking a video on a Browse Page plays it in the Lean Player, Back returns to the Browse Page, and a video with embedding disabled falls back to the watch page. Gate: `measure.ps1` stays under 300 MB while playing.
 
-### M2: Playback Policy
+### M2: Playback Policy (done 2026-11-21)
+
+> The Quality Cap is enforced the same way as the AV1 exclusion, by refusing formats above the cap when the page asks what the browser can play (short side compared, so portrait Shorts count correctly). YouTube's automatic quality still works below the cap, and no private player API is needed. Measured, maximized on the 1080p screen: the Lean Player chose VP9 1080p60 at 1.4% CPU and about 274 MB; the Watch Page Fallback chose VP9 720p at 2.3% CPU and about 407 MB. With the cap set to 720 (via a Debug-only environment variable), both stayed at 720p. Until M4 adds settings, the defaults (no AV1, 1080p) always apply.
+
 - Inject `av1.js` into every frame so AV1 is excluded and VP9 or H.264 is chosen.
 - Apply the Quality Cap through the player API (`setPlaybackQualityRange`). It is a per-user setting, defaulting to 1080p.
 - **Done when:** the probe shows `vp09` (or `avc1`) at no more than the cap, in both the Lean Player and the Watch Page Fallback. Gate: under 10% CPU at 1080p.

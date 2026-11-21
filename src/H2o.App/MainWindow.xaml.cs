@@ -65,8 +65,10 @@ public partial class MainWindow : Window
         Core.SetVirtualHostNameToFolderMapping(
             AllowedDomains.PlayerHost, Path.Combine(AppContext.BaseDirectory, "Player"),
             CoreWebView2HostResourceAccessKind.Deny);
+        await Core.AddScriptToExecuteOnDocumentCreatedAsync(await ReadScriptAsync("video-links.js"));
+        // Runs in every frame, including the embed player inside the Lean Player page.
         await Core.AddScriptToExecuteOnDocumentCreatedAsync(
-            await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Scripts", "video-links.js")));
+            CurrentPlaybackPolicy().BuildScript(await ReadScriptAsync("playback-policy.js")));
 
         Core.NavigationStarting += OnNavigationStarting;
         Core.SourceChanged += OnSourceChanged;
@@ -81,6 +83,22 @@ public partial class MainWindow : Window
         };
 
         Core.Navigate(HomeUrl);
+    }
+
+    static Task<string> ReadScriptAsync(string name) =>
+        File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Scripts", name));
+
+    static PlaybackPolicy CurrentPlaybackPolicy()
+    {
+        // Settings UI and persistence arrive with M4; until then the defaults apply.
+        var policy = PlaybackPolicy.Default;
+#if DEBUG
+        // Debug builds only: lets test scripts try other caps.
+        if (int.TryParse(Environment.GetEnvironmentVariable("H2O_DEBUG_QUALITY_CAP"), out var cap) &&
+            PlaybackPolicy.ValidCaps.Contains(cap))
+            policy = policy.WithQualityCap(cap);
+#endif
+        return policy;
     }
 
     static void ApplyHardening(CoreWebView2 core)
