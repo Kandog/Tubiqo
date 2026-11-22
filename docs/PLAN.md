@@ -114,10 +114,28 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 - Keep playing when minimized, with an optional "pause when minimized" setting. When minimized and not playing, call `TrySuspendAsync` and `MemoryUsageTargetLevel = Low`.
 - **Done when:** the targets table passes, including minimized and not playing.
 
-### M7: Verification
+### M7: Verification (done 2026-11-21)
 - Run `measure.ps1` across the full matrix: Lean Player 1080p, Watch Page Fallback, Browse Pages, minimized, plus a 1-hour session to check for memory growth.
 - Review security against the hardening list in the design.
 - Manual checks: a live stream, an age-restricted video, a video with embedding disabled, and a 2-hour playlist.
+
+> `tools/measure.ps1` (Debug build, maximized window, throwaway data folder) gave these results:
+>
+> | Scenario | CPU avg | Memory avg (max) | Target |
+> |---|---|---|---|
+> | Lean Player, 1080p60 VP9, 1 hour, looping | 1.5% | 298 MB (333), +15 MB over the hour | met |
+> | Lean Player minimized, still playing | 2.1% | 278 MB | met |
+> | Minimized, paused (suspended) | 0.1% | falls to about 36–70 MB | met |
+> | Browse Page: search / home (90 s) | 0.2% / 0.3% | 413 / 357 MB | no target |
+> | Watch Page Fallback, 720p, 10 min | 1.8% | 491 MB (509) | **over 400 MB** |
+>
+> - **Media buffer:** the first 1-hour session failed the target. Memory climbed from 274 MB to about 450 MB in the first 6 minutes, then stayed flat, so it was Chromium's default video buffer of up to 150 MB, not a leak. Tubiqo now caps the buffers (`--mse-video-buffer-size-limit-mb=40`, audio 6). That is still about a minute of 1080p60 ahead, with no stalls seen and fewer dropped frames. Short 90-second runs miss this, so judge memory on runs of 10 minutes or more.
+> - **Watch Page Fallback** stays over target: it is YouTube's full watch page (ADR 0004). It only appears for videos the embed refuses, and most of those can't play without signing in anyway.
+> - **Security:** the review found one real hole. The WebView2 loader honours `WEBVIEW2_*` environment variables whatever the app's options say. In a Release build, `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=…` opened a DevTools port that any local program could use to drive the page, and `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` could swap the runtime. Release builds now remove every `WEBVIEW2_*` variable at startup; the port stayed closed after the fix. The rest of the hardening list checked out: permissions, downloads, external schemes, certificate errors, the context menu, DevTools off in Release, the navigation guard tests (dangerous schemes, lookalike hosts), host messages only from the Lean Player page with origin checks, and updates hash-checked before they run.
+> - **Live stream:** plays in the Lean Player, so open question 4 is answered; live chat isn't there, as expected.
+> - **Age-restricted:** the embed refuses the video, the real embed error reaches Tubiqo and it falls back to the watch page, which asks to sign in. Tubiqo has no sign-in (view-only), so these videos can't be watched. This also confirms the real-error path that M1 only simulated. I couldn't find a video with embedding disabled; it uses the same error codes (101/150).
+> - **Playlists:** not supported. The Lean Player keeps only `v=` and drops `list=`, so "Play all" plays the first video and stops. Autoplay-next is also trimmed by design. In place of the 2-hour playlist, the 1-hour looping session covered long playback.
+> - Ads in embeds (open question 3) didn't appear in any M7 run.
 
 ## Testing approach
 
@@ -129,7 +147,8 @@ Packages: `Microsoft.Web.WebView2`, `Microsoft.Data.Sqlite`, xUnit. Signing uses
 1. **Back from the Lean Player:** reloading the Browse Page is lightest, but it loses the scroll position. The alternative is keeping it in a second, suspended WebView, which costs memory. Plan: reload first, then measure the alternative in M1 if it feels bad.
 2. ~~**SmartScreen:** accept the "unknown publisher" warning without a paid code-signing certificate?~~ Accepted 2026-11-21.
 3. **Ads in embeds:** none appeared in testing, but YouTube may show them. Network blocking in the Lean Player needs checking, given the stall seen on the full watch page.
-4. **Live streams** in the Lean Player are untested, and live chat isn't available there.
+4. ~~**Live streams** in the Lean Player are untested, and live chat isn't available there.~~ Tested in M7: they play; there's no live chat.
+6. **Playlists:** should the Lean Player play a playlist through (keep `list=`, go to the next video on end)? Today it plays only the first video.
 5. ~~**GitHub repo:** which account or repo name will releases use?~~ Answered 2026-11-21: [Kandog/Tubiqo](https://github.com/Kandog/Tubiqo); the app was renamed from h2o to Tubiqo to match.
 
 ## Risks

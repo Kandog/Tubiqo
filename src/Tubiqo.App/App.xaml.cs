@@ -20,6 +20,9 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+#if !DEBUG
+        IgnoreWebView2Overrides();
+#endif
 
         if (!RuntimeIsUsable(out var problem))
         {
@@ -88,6 +91,20 @@ public partial class App : Application
         {
             try { Directory.Delete(dir, recursive: true); }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { } // still in use: try next start
+        }
+    }
+
+    /// <summary>
+    /// The WebView2 loader reads WEBVIEW2_* environment variables itself, whatever the app's options say. Any program
+    /// that can set a user variable could then open a DevTools port into Tubiqo (WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS),
+    /// swap in another browser runtime (WEBVIEW2_BROWSER_EXECUTABLE_FOLDER) or move the profile. Release builds drop
+    /// them all from this process before WebView2 is touched; Debug builds keep them for test scripts.
+    /// </summary>
+    static void IgnoreWebView2Overrides()
+    {
+        foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>().ToList())
+        {
+            if (name.StartsWith("WEBVIEW2_", StringComparison.OrdinalIgnoreCase)) Environment.SetEnvironmentVariable(name, null);
         }
     }
 

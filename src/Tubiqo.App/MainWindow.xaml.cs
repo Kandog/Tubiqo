@@ -75,7 +75,10 @@ public partial class MainWindow : Window
         {
             AreBrowserExtensionsEnabled = false,
             // The Lean Player starts videos on a new page, after the user's click on the previous one.
-            AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required",
+            // Media buffers: Chromium keeps up to 150 MB of video buffered by default; 40 MB is still about a minute
+            // of 1080p60 ahead and holds a long session at ~295 MB instead of ~450 MB (measured in M7).
+            AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required " +
+                "--mse-video-buffer-size-limit-mb=40 --mse-audio-buffer-size-limit-mb=6",
         };
 #if DEBUG
         // Debug builds only: keep WebView2's own override variable working (used by test scripts to attach DevTools).
