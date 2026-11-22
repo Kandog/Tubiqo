@@ -4,12 +4,12 @@ A lightweight, security-focused desktop browser whose main job is watching YouTu
 
 ## Language
 
-**View-only**:
-The browser never signs in to a Google account and never sends user actions back to YouTube (no likes, comments, subscriptions or uploads).
-_Avoid_: Read-only, guest mode
+**Sign-in**:
+The user may sign in to their Google account inside Tubiqo, using YouTube's own Sign in button; it never goes through the default browser. Tubiqo never saves or fills in passwords. Superseded the earlier "view-only" rule (see ADR 0005).
+_Avoid_: Login, guest mode
 
 **Allowed Domains**:
-The fixed set of YouTube-owned domains Tubiqo is willing to load, plus Tubiqo's own local page that hosts the Lean Player. Any other link is handed to the user's default browser instead of opening in Tubiqo.
+The fixed set of YouTube-owned domains Tubiqo is willing to load, plus Tubiqo's own local page that hosts the Lean Player, and Google's sign-in pages (`accounts.google.com`, the `/accounts/` pages of country domains like `accounts.google.ca`, and reCAPTCHA frames during sign-in). Any other link is handed to the user's default browser instead of opening in Tubiqo.
 _Avoid_: Whitelist, permitted sites
 
 **Single Player**:
@@ -41,7 +41,7 @@ The user's rules for which video formats Tubiqo accepts from YouTube: which code
 _Avoid_: Video settings, quality preset
 
 **Site Data**:
-Everything YouTube itself stores inside Tubiqo (cookies, visitor ID, local storage, cache). It is wiped every time Tubiqo closes.
+Everything YouTube and Google sign-in store inside Tubiqo (cookies, visitor ID, local storage, cache). It is kept between launches so a sign-in survives a restart, and wiped when the user chooses **Sign out and clear site data** in Settings.
 _Avoid_: Browser data, cache
 
 **Tubiqo Data**:

@@ -2,7 +2,7 @@
 
 A small, locked-down Windows app for watching YouTube. It uses much less CPU and memory than a full browser: about **300 MB and under 2% CPU at 1080p**, and nearly nothing when minimized and paused.
 
-Tubiqo is view-only: it never signs in to a Google account and never sends likes, comments or subscriptions. Nothing is remembered between sessions except your local watch history.
+You can sign in to your Google account right inside Tubiqo; it never sends you to your default browser. Tubiqo never saves or fills in passwords.
 
 ## Install
 
@@ -17,9 +17,9 @@ To update, open **Settings → Check for updates**. Tubiqo never checks on its o
 ## Features
 
 - **Lean Player:** videos play in YouTube's embeddable player on its own, without the watch page around it. AV1 is avoided and quality is capped at 1080p (you can change the cap in Settings) to keep decoding cheap. Videos keep playing when the window is minimized, or can pause instead.
-- **Browse Pages:** YouTube's home, search and channel pages, slimmed by **Trim Rules**. Ads, Shorts, hover previews, comments, live chat, related videos, autoplay-next and the home feed can each be switched on or off.
+- **Browse Pages:** YouTube's home, search and channel pages, slimmed by **Trim Rules**. Ads, Shorts, hover previews, comments, live chat, related videos, autoplay-next, the home feed and links to Google Account pages can each be switched on or off.
 - **Watch history:** one entry per video with resume position, search, delete, and auto-delete after a chosen time. It's stored only on your PC.
-- **Private by default:** cookies and site data are wiped every time Tubiqo closes. Non-YouTube links open in your default browser only after you confirm.
+- **Sign-in inside the app:** YouTube's Sign in button opens Google's sign-in page in Tubiqo, and you stay signed in after closing it. **Settings → Sign out and clear site data** signs you out and deletes everything YouTube stored. Other non-YouTube links open in your default browser only after you confirm.
 - **Hardened:**
   - Every site permission is denied, and downloads are blocked.
   - DevTools, autofill and password saving are off.
@@ -39,7 +39,7 @@ To update, open **Settings → Check for updates**. Tubiqo never checks on its o
 
 ### Known limits
 
-- There's no sign-in, so age-restricted videos can't be played.
+- Age-restricted videos need you to be signed in, and play on YouTube's full watch page.
 - Playlists play only their first video.
 - There's no live chat in the Lean Player.
 - Videos that can't be embedded open on YouTube's full watch page (the "Watch Page Fallback"), which uses about 490 MB.
@@ -76,7 +76,7 @@ To fix Trim Rules without a new app version, add `-RulePack <file>` with a highe
 ## Design documents
 
 - [CONTEXT.md](CONTEXT.md): the domain language (Lean Player, Trim Rule, Rule Pack, Site Data, Watch Entry…).
-- [docs/adr](docs/adr): architecture decisions. They cover WebView2 Evergreen on Windows only, browsing YouTube's own pages with Trim Rules, signed data-only Rule Packs, and playing in the Lean Player.
+- [docs/adr](docs/adr): architecture decisions. They cover WebView2 Evergreen on Windows only, browsing YouTube's own pages with Trim Rules, signed data-only Rule Packs, playing in the Lean Player, and signing in inside Tubiqo.
 - [docs/PLAN.md](docs/PLAN.md): milestones, measurements and open questions.
 
 ## License

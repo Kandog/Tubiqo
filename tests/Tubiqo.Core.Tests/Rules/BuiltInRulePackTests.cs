@@ -27,6 +27,7 @@ public class BuiltInRulePackTests
         {
             ["ads"] = true, ["hover-previews"] = true, ["shorts"] = true, ["comments"] = true,
             ["live-chat"] = true, ["related"] = false, ["autoplay-next"] = true, ["home-feed"] = true,
+            ["google-account-links"] = true,
         }, defaults);
     }
 

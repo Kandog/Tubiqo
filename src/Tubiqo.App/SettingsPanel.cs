@@ -80,6 +80,17 @@ public partial class MainWindow
         if (settingsUiReady) preferences.PauseWhenMinimized = PauseWhenMinimized.IsChecked == true;
     }
 
+    async void ClearSiteData_Click(object sender, RoutedEventArgs e)
+    {
+        if (Browser.CoreWebView2 == null) return;
+        var answer = MessageBox.Show(this,
+            "Sign out of Google and delete everything YouTube has stored in Tubiqo (cookies, cache, settings)?\n\nYour Watch History is kept.",
+            "Sign out", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+        if (answer != MessageBoxResult.Yes) return;
+        await Core.Profile.ClearBrowsingDataAsync();
+        Core.Navigate(HomeUrl);
+    }
+
     void ReloadForSettings_Click(object sender, RoutedEventArgs e)
     {
         SettingsChangedNote.Visibility = Visibility.Collapsed;

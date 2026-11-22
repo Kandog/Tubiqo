@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "2026.11.21.0",
+  "version": "2026.11.22.0",
   "rules": [
     {
       "id": "ads",
@@ -97,6 +97,14 @@
       "default": true,
       "hide": [
         "ytd-browse[page-subtype='home'] ytd-continuation-item-renderer"
+      ]
+    },
+    {
+      "id": "google-account-links",
+      "title": "Hide links to Google Account pages",
+      "default": true,
+      "hide": [
+        "ytd-compact-link-renderer:has(a[href*='myaccount.google.com'])"
       ]
     }
   ]

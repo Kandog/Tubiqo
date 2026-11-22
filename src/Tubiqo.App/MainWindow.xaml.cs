@@ -86,7 +86,7 @@ public partial class MainWindow : Window
             options.AdditionalBrowserArguments += " " + extra;
 #endif
         environment = await CoreWebView2Environment.CreateAsync(
-            browserExecutableFolder: null, userDataFolder: siteData.CreateSessionFolder(), options);
+            browserExecutableFolder: null, userDataFolder: siteData.ProfileFolder(), options);
         await Browser.EnsureCoreWebView2Async(environment);
 
         ApplyHardening(Core);
@@ -357,7 +357,7 @@ public partial class MainWindow : Window
     {
         if (readyToClose) { base.OnClosing(e); return; }
 
-        // Shut the browser down first so its files are released, then wipe Site Data.
+        // Shut the browser down first so Site Data (kept, for sign-in) is written out cleanly.
         e.Cancel = true;
         if (shuttingDown) return;
         shuttingDown = true;
@@ -372,8 +372,6 @@ public partial class MainWindow : Window
             Browser.Dispose();
             await Task.WhenAny(exited.Task, Task.Delay(TimeSpan.FromSeconds(5)));
         }
-        siteData.WipeAll();
-
         readyToClose = true;
         Close();
     }

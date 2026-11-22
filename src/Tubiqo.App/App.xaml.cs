@@ -45,7 +45,7 @@ public partial class App : Application
         Directory.CreateDirectory(dataRoot);
         WatchForCrashes(Path.Combine(dataRoot, "crash.log"));
         var siteData = new SiteDataStore(dataRoot);
-        siteData.WipeAll(); // leftovers from a crash or a forced shutdown
+        siteData.WipeOldSessions(); // per-launch folders left by Tubiqo 1.0
         DeleteOldUpdateDownloads();
 
         database = TubiqoDatabase.Open(Path.Combine(dataRoot, "tubiqo.db"));

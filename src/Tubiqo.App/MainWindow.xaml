@@ -106,6 +106,11 @@
                     <TextBlock Text="Shortcuts: Ctrl+L open a link · F11 full screen · Alt+← / Alt+→ back and forward · F5 reload · Ctrl+H Watch History"
                                Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0" />
 
+                    <TextBlock Text="Account" FontWeight="SemiBold" Margin="0,16,0,4" />
+                    <TextBlock Text="Sign in with YouTube's own Sign in button; it stays inside Tubiqo and is remembered after you close it. Passwords are never saved by Tubiqo."
+                               Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,6" />
+                    <Button Content="Sign out and clear site data" Click="ClearSiteData_Click" HorizontalAlignment="Left" />
+
                     <TextBlock Text="Trim Rules" FontWeight="SemiBold" Margin="0,16,0,4" />
                     <StackPanel x:Name="TrimRuleList" />
                     <TextBlock x:Name="RulePackInfo" Opacity="0.7" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0" />

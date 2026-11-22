@@ -37,11 +37,17 @@ public static class NavigationGuard
 
         if (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp) return NavigationDecision.Blocked;
 
-        var allowedHost = AllowedDomains.Contains(uri.IdnHost);
+        var allowedHost = AllowedDomains.Contains(uri.IdnHost) || AllowedDomains.IsCountrySignInPage(uri);
+
+        if (!allowedHost && target == NavigationTarget.Frame && uri.Scheme == Uri.UriSchemeHttps &&
+            uri.IsDefaultPort && AllowedDomains.IsSignInFrame(uri))
+        {
+            return new(NavigationAction.Allow, uri.AbsoluteUri);
+        }
 
         if (!allowedHost)
         {
-            // A frame from elsewhere (ads, sign-in helpers) is never worth opening in the user's browser.
+            // A frame from elsewhere (ads, trackers) is never worth opening in the user's browser.
             return target == NavigationTarget.TopLevel
                 ? new(NavigationAction.OpenExternally, uri.AbsoluteUri)
                 : NavigationDecision.Blocked;
