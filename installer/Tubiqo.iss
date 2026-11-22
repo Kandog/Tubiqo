@@ -1,4 +1,4 @@
-; Tubiqo installer (Inno Setup 6). Per-user install: no admin rights, nothing outside the user's profile.
+﻿; Tubiqo installer (Inno Setup 6). Per-user install: no admin rights, nothing outside the user's profile.
 ; Built by tools/build-release.ps1, which passes:
 ;   /DAppVersion=x.y.z  /DSourceDir=<published app folder>  /DOutputDir=<installer output folder>
 
@@ -28,6 +28,7 @@ WizardStyle=modern
 ; Close a running Tubiqo before replacing its files (used by in-app updates).
 CloseApplications=yes
 RestartApplications=no
+SetupIconFile=..\src\Tubiqo.App\Assets\Tubiqo.ico
 UninstallDisplayIcon={app}\Tubiqo.exe
 UninstallDisplayName=Tubiqo
 
