@@ -18,7 +18,7 @@
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
     <AssemblyName>Tubiqo</AssemblyName>
     <!-- The app version "Check for updates" compares against releases. Bump it for every release. -->
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <!-- App icon (exe, title bar, taskbar). Source: Assets\Tubiqo.svg; rebuild with tools/make-icon.py -->
     <ApplicationIcon>Assets\Tubiqo.ico</ApplicationIcon>
   </PropertyGroup>
