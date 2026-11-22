@@ -79,6 +79,10 @@ To fix Trim Rules without a new app version, add `-RulePack <file>` with a highe
 - [docs/adr](docs/adr): architecture decisions. They cover WebView2 Evergreen on Windows only, browsing YouTube's own pages with Trim Rules, signed data-only Rule Packs, and playing in the Lean Player.
 - [docs/PLAN.md](docs/PLAN.md): milestones, measurements and open questions.
 
+## License
+
+[MIT](LICENSE) © 2026 Tubiqo contributors.
+
 ## Note
 
 Tubiqo hides ads on YouTube's pages, which goes against YouTube's Terms of Service. It's made for personal use with friends and family, not as a public product. It isn't affiliated with YouTube or Google.
